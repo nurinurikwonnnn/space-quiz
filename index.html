@@ -480,6 +480,17 @@
         }
       ];
 
+      function shuffle(items) {
+        const shuffled = [...items];
+
+        for (let index = shuffled.length - 1; index > 0; index -= 1) {
+          const randomIndex = Math.floor(Math.random() * (index + 1));
+          [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
+        }
+
+        return shuffled;
+      }
+
       const scoreValue = document.getElementById('scoreValue');
       const progressBar = document.getElementById('progressBar');
       const progressTrack = document.querySelector('.progress-track');
@@ -498,18 +509,19 @@
       let currentIndex = 0;
       let score = 0;
       let locked = false;
+      let quizQuestions = [];
 
       function updateProgress() {
-        const percentage = ((currentIndex + 1) / questions.length) * 100;
+        const percentage = ((currentIndex + 1) / quizQuestions.length) * 100;
         progressBar.style.width = `${percentage}%`;
-        const currentQuestion = Math.min(currentIndex + 1, questions.length);
-        progressText.textContent = `${currentQuestion} / ${questions.length}`;
+        const currentQuestion = Math.min(currentIndex + 1, quizQuestions.length);
+        progressText.textContent = `${currentQuestion} / ${quizQuestions.length}`;
         progressTrack.setAttribute('aria-valuenow', currentQuestion);
-        progressTrack.setAttribute('aria-valuetext', `${currentQuestion} / ${questions.length}`);
+        progressTrack.setAttribute('aria-valuetext', `${currentQuestion} / ${quizQuestions.length}`);
       }
 
       function renderQuestion() {
-        const current = questions[currentIndex];
+        const current = quizQuestions[currentIndex];
         questionMeta.textContent = `문제 ${currentIndex + 1}`;
         questionText.textContent = current.question;
         choicesEl.innerHTML = '';
@@ -533,7 +545,7 @@
         if (locked) return;
         locked = true;
 
-        const current = questions[currentIndex];
+        const current = quizQuestions[currentIndex];
         const buttons = [...choicesEl.querySelectorAll('.choice')];
 
         buttons.forEach((btn) => {
@@ -559,7 +571,7 @@
 
         setTimeout(() => {
           currentIndex += 1;
-          if (currentIndex < questions.length) {
+          if (currentIndex < quizQuestions.length) {
             renderQuestion();
           } else {
             showResults();
@@ -592,6 +604,10 @@
       function restartQuiz() {
         currentIndex = 0;
         score = 0;
+        quizQuestions = shuffle(questions).map((question) => ({
+          ...question,
+          choices: shuffle(question.choices)
+        }));
         scoreValue.textContent = '0';
         quizCard.classList.remove('hidden');
         resultsScreen.classList.add('hidden');
@@ -600,7 +616,7 @@
       }
 
       restartBtn.addEventListener('click', restartQuiz);
-      renderQuestion();
+      restartQuiz();
     </script>
   </body>
 </html>
