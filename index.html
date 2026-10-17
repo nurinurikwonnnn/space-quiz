@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>우주 탐사 퀴즈</title>
+    <style>
+      :root {
+        --bg: #eef4ff;
+        --bg-strong: #dfe9ff;
+        --panel: rgba(255, 255, 255, 0.82);
+        --panel-border: rgba(120, 139, 255, 0.18);
+        --text: #1d2340;
+        --muted: #5a6383;
+        --primary: #5b6cff;
+        --primary-strong: #3d4ee7;
+        --secondary: #7c86ff;
+        --correct: #22c55e;
+        --correct-soft: rgba(34, 197, 94, 0.14);
+        --wrong: #ef4444;
+        --wrong-soft: rgba(239, 68, 68, 0.12);
+        --shadow: 0 18px 45px rgba(92, 108, 191, 0.22);
+        --chip: rgba(91, 108, 255, 0.1);
+        --console: #f5f8ff;
+        --console-line: rgba(61, 78, 231, 0.12);
+        --success-text: #087333;
+        --error-text: #a51f1f;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #091321;
+          --bg-strong: #121e2d;
+          --panel: rgba(15, 24, 39, 0.8);
+          --panel-border: rgba(139, 170, 255, 0.17);
+          --text: #edf3ff;
+          --muted: #a9b5ce;
+          --primary: #8ca6ff;
+          --primary-strong: #6d86ff;
+          --secondary: #7d8ef9;
+          --correct: #3ad67e;
+          --correct-soft: rgba(58, 214, 126, 0.15);
+          --wrong: #ff6b6b;
+          --wrong-soft: rgba(255, 107, 107, 0.13);
+          --shadow: 0 18px 45px rgba(3, 7, 18, 0.7);
+          --chip: rgba(140, 166, 255, 0.12);
+          --console: #101a2b;
+          --console-line: rgba(140, 166, 255, 0.1);
+          --success-text: #7df0a8;
+          --error-text: #ffaaaa;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html, body {
+        margin: 0;
+        min-height: 100%;
+        font-family: "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+        background:
+          radial-gradient(circle at top, rgba(110, 133, 255, 0.28), transparent 35%),
+          linear-gradient(180deg, var(--bg) 0%, var(--bg-strong) 100%);
+        color: var(--text);
+        font-size: 15px;
+        line-height: 1.5;
+      }
+
+      body {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+
+      .app-shell {
+        width: min(100%, 560px);
+      }
+
+      .card {
+        position: relative;
+        overflow: hidden;
+        background:
+          linear-gradient(var(--console-line) 1px, transparent 1px),
+          linear-gradient(90deg, var(--console-line) 1px, transparent 1px),
+          var(--panel);
+        background-size: 28px 28px, 28px 28px, auto;
+        border: 1px solid var(--panel-border);
+        border-radius: 22px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+      }
+
+      .card::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 auto;
+        height: 4px;
+        background: linear-gradient(90deg, #44d6a0, #61a8ff 48%, #9d7cff);
+        pointer-events: none;
+      }
+
+      .inner {
+        position: relative;
+        padding: 26px 24px 22px;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 10px;
+        border-radius: 7px;
+        background: var(--chip);
+        color: var(--primary-strong);
+        font-weight: 700;
+        font-size: 12px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .badge::before {
+        content: "";
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #22c55e;
+        box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.14), 0 0 12px rgba(34, 197, 94, 0.65);
+      }
+
+      .score-pill {
+        min-width: 90px;
+        text-align: center;
+        padding: 8px 12px;
+        border-radius: 8px;
+        background: var(--console);
+        border: 1px solid rgba(109, 134, 255, 0.18);
+        font-weight: 800;
+        color: var(--text);
+        font-variant-numeric: tabular-nums;
+        box-shadow: inset 0 1px rgba(255, 255, 255, 0.18);
+      }
+
+      .progress-wrap {
+        margin-bottom: 22px;
+      }
+
+      .progress-meta {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .progress-track {
+        position: relative;
+        width: 100%;
+        height: 10px;
+        border: 1px solid var(--panel-border);
+        border-radius: 4px;
+        background: var(--console);
+        overflow: hidden;
+      }
+
+      .progress-bar {
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 0%;
+        border-radius: 2px;
+        background: linear-gradient(90deg, #20b981 0%, #42a5ff 55%, #7c6cff 100%);
+        box-shadow: 0 8px 18px rgba(112, 120, 255, 0.3);
+        transition: width 0.35s ease;
+      }
+
+      .question-panel {
+        min-height: 300px;
+      }
+
+      .question-index {
+        display: inline-block;
+        margin-bottom: 12px;
+        padding: 6px 9px;
+        border-left: 3px solid var(--primary);
+        border-radius: 2px;
+        background: rgba(124, 134, 255, 0.09);
+        color: var(--primary-strong);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        font-variant-numeric: tabular-nums;
+      }
+
+      h1 {
+        margin: 0 0 20px;
+        font-size: clamp(1.6rem, 2vw + 0.9rem, 2.2rem);
+        line-height: 1.25;
+        letter-spacing: -0.04em;
+      }
+
+      .choices {
+        display: grid;
+        gap: 12px;
+      }
+
+      .choice {
+        position: relative;
+        width: 100%;
+        border: 1px solid rgba(136, 149, 201, 0.22);
+        background: var(--panel);
+        color: var(--text);
+        border-radius: 9px;
+        padding: 15px 16px;
+        text-align: left;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.18s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+      }
+
+      .choice:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 18px rgba(91, 108, 255, 0.12);
+        border-color: rgba(109, 134, 255, 0.42);
+      }
+
+      .choice:focus-visible {
+        outline: 3px solid rgba(109, 134, 255, 0.35);
+        outline-offset: 2px;
+      }
+
+      .choice.correct {
+        background: var(--correct-soft);
+        border-color: rgba(34, 197, 94, 0.8);
+        color: var(--success-text);
+      }
+
+      .choice.wrong {
+        background: var(--wrong-soft);
+        border-color: rgba(239, 68, 68, 0.8);
+        color: var(--error-text);
+        animation: shake 0.38s ease-in-out;
+      }
+
+      .choice.disabled {
+        pointer-events: none;
+      }
+
+      .feedback {
+        min-height: 28px;
+        margin-top: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        border-radius: 12px;
+        letter-spacing: 0.01em;
+        opacity: 0;
+        transform: translateY(8px);
+        transition: opacity 0.22s ease, transform 0.22s ease;
+      }
+
+      .feedback.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .feedback.correct {
+        background: rgba(34, 197, 94, 0.12);
+        color: var(--success-text);
+      }
+
+      .feedback.wrong {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--error-text);
+      }
+
+      .results {
+        display: none;
+        padding: 30px 24px 24px;
+        text-align: center;
+      }
+
+      .results.show {
+        display: block;
+      }
+
+      .result-emoji {
+        font-size: clamp(2.8rem, 5vw, 4rem);
+        margin-bottom: 10px;
+      }
+
+      .result-title {
+        font-size: clamp(1.7rem, 3vw, 2.3rem);
+        margin: 0 0 8px;
+        letter-spacing: -0.04em;
+      }
+
+      .result-score {
+        font-size: 1.1rem;
+        color: var(--muted);
+        margin-bottom: 18px;
+      }
+
+      .result-score strong {
+        font-size: 2rem;
+        color: var(--text);
+      }
+
+      .result-actions {
+        display: flex;
+        justify-content: center;
+      }
+
+      .restart-btn {
+        appearance: none;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 22px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: #fff;
+        font: inherit;
+        font-weight: 800;
+        cursor: pointer;
+        box-shadow: 0 12px 25px rgba(111, 125, 255, 0.35);
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+      }
+
+      .restart-btn:hover {
+        transform: translateY(-1px) scale(1.01);
+        box-shadow: 0 16px 30px rgba(111, 125, 255, 0.42);
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        20% { transform: translateX(-7px); }
+        40% { transform: translateX(7px); }
+        60% { transform: translateX(-6px); }
+        80% { transform: translateX(6px); }
+      }
+
+      @media (max-width: 480px) {
+        .inner {
+          padding: 20px 18px 18px;
+        }
+
+        .header {
+          align-items: flex-start;
+        }
+
+        .score-pill {
+          min-width: 82px;
+        }
+
+        .choice {
+          padding: 14px 14px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <div class="card" id="quizCard">
+        <div class="inner">
+          <div class="header">
+            <div class="badge">🚀 우주 탐사</div>
+            <div class="score-pill"><span id="scoreValue">0</span> / 10</div>
+          </div>
+
+          <div class="progress-wrap">
+            <div class="progress-meta">
+              <span>진행률</span>
+              <span id="progressText">1 / 10</span>
+            </div>
+            <div class="progress-track" role="progressbar" aria-label="퀴즈 진행률" aria-valuemin="0" aria-valuemax="10" aria-valuenow="1" aria-valuetext="1 / 10">
+              <div class="progress-bar" id="progressBar"></div>
+            </div>
+          </div>
+
+          <div class="question-panel">
+            <div class="question-index" id="questionMeta">문제 1</div>
+            <h1 id="questionText">질문을 불러오는 중...</h1>
+            <div class="choices" id="choices"></div>
+          </div>
+
+          <div class="feedback" id="feedback" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div class="card results" id="resultsScreen" aria-live="polite">
+        <div class="inner">
+          <div class="result-emoji" id="resultEmoji">🌙</div>
+          <h2 class="result-title" id="resultTitle">결과 화면</h2>
+          <div class="result-score">
+            총점 <strong id="finalScore">0</strong> / 10
+          </div>
+          <div class="result-actions">
+            <button class="restart-btn" id="restartBtn" type="button">다시 도전하기</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const questions = [
+        {
+          question: '태양계에서 가장 큰 행성은 무엇인가요?',
+          choices: ['화성', '목성', '토성', '지구'],
+          answer: '목성'
+        },
+        {
+          question: '우주에서 별이 반짝이는 이유는 무엇인가요?',
+          choices: ['우리 눈이 깜빡이기 때문', '대기 영향으로 빛이 흔들리기 때문', '별이 자체적으로 움직이기 때문', '우주가 어두워서'],
+          answer: '대기 영향으로 빛이 흔들리기 때문'
+        },
+        {
+          question: '달은 지구를 몇 번 공전하는 동안 지구를 한 바퀴 도는가요?',
+          choices: ['1번', '2번', '3번', '4번'],
+          answer: '1번'
+        },
+        {
+          question: '우주복 안에는 무엇이 들어있을까요?',
+          choices: ['산소', '물', '비누', '모래'],
+          answer: '산소'
+        },
+        {
+          question: '가장 가까운 항성은 무엇인가요?',
+          choices: ['시리우스', '프로키온', '태양', '베가'],
+          answer: '태양'
+        },
+        {
+          question: 'ISS는 어떤 목적으로 만들어졌나요?',
+          choices: ['지구를 관측하는 우주정거장', '우주선 추락 실험장', '우주 비행사 생활 및 과학 연구', '해저 탐사'],
+          answer: '우주 비행사 생활 및 과학 연구'
+        },
+        {
+          question: '화성 표면에서 찾을 수 있는 대표적인 색은 무엇인가요?',
+          choices: ['푸른색', '붉은색', '초록색', '노란색'],
+          answer: '붉은색'
+        },
+        {
+          question: '블랙홀은 무엇인가요?',
+          choices: ['빛을 내는 별', '빛과 물질이 빠져나갈 수 없는 강한 중력체', '달의 일종', '우주에서 가장 큰 행성'],
+          answer: '빛과 물질이 빠져나갈 수 없는 강한 중력체'
+        },
+        {
+          question: '우주왕복선의 대표적인 임무는 무엇인가요?',
+          choices: ['지구를 한 바퀴 도는 것', '우주 실험, 우주정거장 보급, 관측', '해양 탐사', '지하 탐사'],
+          answer: '우주 실험, 우주정거장 보급, 관측'
+        },
+        {
+          question: '우주에서 가장 큰 은하는 무엇인가요?',
+          choices: ['우리은하', '안드로메다은하', '소마젤란운', '마젤란운'],
+          answer: '안드로메다은하'
+        }
+      ];
+
+      const scoreValue = document.getElementById('scoreValue');
+      const progressBar = document.getElementById('progressBar');
+      const progressTrack = document.querySelector('.progress-track');
+      const progressText = document.getElementById('progressText');
+      const questionMeta = document.getElementById('questionMeta');
+      const questionText = document.getElementById('questionText');
+      const choicesEl = document.getElementById('choices');
+      const feedbackEl = document.getElementById('feedback');
+      const quizCard = document.getElementById('quizCard');
+      const resultsScreen = document.getElementById('resultsScreen');
+      const resultEmoji = document.getElementById('resultEmoji');
+      const resultTitle = document.getElementById('resultTitle');
+      const finalScore = document.getElementById('finalScore');
+      const restartBtn = document.getElementById('restartBtn');
+
+      let currentIndex = 0;
+      let score = 0;
+      let locked = false;
+
+      function updateProgress() {
+        const percentage = ((currentIndex + 1) / questions.length) * 100;
+        progressBar.style.width = `${percentage}%`;
+        const currentQuestion = Math.min(currentIndex + 1, questions.length);
+        progressText.textContent = `${currentQuestion} / ${questions.length}`;
+        progressTrack.setAttribute('aria-valuenow', currentQuestion);
+        progressTrack.setAttribute('aria-valuetext', `${currentQuestion} / ${questions.length}`);
+      }
+
+      function renderQuestion() {
+        const current = questions[currentIndex];
+        questionMeta.textContent = `문제 ${currentIndex + 1}`;
+        questionText.textContent = current.question;
+        choicesEl.innerHTML = '';
+        locked = false;
+        feedbackEl.className = 'feedback';
+        feedbackEl.textContent = '';
+        scoreValue.textContent = score;
+        updateProgress();
+
+        current.choices.forEach((choice) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'choice';
+          button.textContent = choice;
+          button.addEventListener('click', () => handleAnswer(choice, button));
+          choicesEl.appendChild(button);
+        });
+      }
+
+      function handleAnswer(selected, button) {
+        if (locked) return;
+        locked = true;
+
+        const current = questions[currentIndex];
+        const buttons = [...choicesEl.querySelectorAll('.choice')];
+
+        buttons.forEach((btn) => {
+          btn.classList.add('disabled');
+          if (btn.textContent === current.answer) {
+            btn.classList.add('correct');
+          }
+        });
+
+        const isCorrect = selected === current.answer;
+
+        if (isCorrect) {
+          score += 1;
+          scoreValue.textContent = score;
+          button.classList.add('correct');
+          feedbackEl.textContent = '정답입니다! 🌟';
+          feedbackEl.classList.add('correct', 'show');
+        } else {
+          button.classList.add('wrong');
+          feedbackEl.textContent = `아쉽네요! 정답은 “${current.answer}”입니다. 😅`;
+          feedbackEl.classList.add('wrong', 'show');
+        }
+
+        setTimeout(() => {
+          currentIndex += 1;
+          if (currentIndex < questions.length) {
+            renderQuestion();
+          } else {
+            showResults();
+          }
+        }, 900);
+      }
+
+      function showResults() {
+        quizCard.classList.add('hidden');
+        resultsScreen.classList.remove('hidden');
+        resultsScreen.classList.add('show');
+
+        finalScore.textContent = score;
+
+        if (score === 10) {
+          resultEmoji.textContent = '🏆';
+          resultTitle.textContent = '완벽한 우주 탐험가!';
+        } else if (score >= 7) {
+          resultEmoji.textContent = '🚀';
+          resultTitle.textContent = '훌륭해요!';
+        } else if (score >= 4) {
+          resultEmoji.textContent = '🌌';
+          resultTitle.textContent = '좋은 시작이에요!';
+        } else {
+          resultEmoji.textContent = '🌙';
+          resultTitle.textContent = '다시 도전해볼까요?';
+        }
+      }
+
+      function restartQuiz() {
+        currentIndex = 0;
+        score = 0;
+        scoreValue.textContent = '0';
+        quizCard.classList.remove('hidden');
+        resultsScreen.classList.add('hidden');
+        resultsScreen.classList.remove('show');
+        renderQuestion();
+      }
+
+      restartBtn.addEventListener('click', restartQuiz);
+      renderQuestion();
+    </script>
+  </body>
+</html>
